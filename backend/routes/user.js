@@ -111,10 +111,17 @@ router.put("/", authMiddleware, async (req, res) => {
   });
 });
 
-router.get("/bulk", async (req, res) => {
+router.get("/bulk", authMiddleware, async (req, res) => {
   const filter = req.query.filter || "";
 
-  const user = await User.find({
+  const reqUser = await User.findOne({_id: req.userId});
+  if (!reqUser) {
+    return res.status(411).json({
+      msg: "Error while getting data"
+    });
+  }
+
+  const allUser = await User.find({
     $or: [{
       firstName: {
         "$regex": filter
@@ -125,14 +132,32 @@ router.get("/bulk", async (req, res) => {
       }
     }]
   });
-
+  
+  const result = allUser.filter((user) => String(user._id) !== String(reqUser._id));
+  // const result = allUser.filter((value) => value.username !== user.username);
+  
   res.json({
-    users: user.map((user) => ({
+    users: result.map((user) => ({
       username: user.username,
       firstName: user.firstName,
       lastName: user.lastName,
       _id: user._id
     }))
+  });
+});
+
+router.get("/userinfo", authMiddleware, async (req, res) => {
+  const user = await User.findOne({_id: req.userId});
+  if (!user) {
+    return res.status(411).json({
+      msg: "Error while getting data"
+    });
+  }
+
+  const userAccount = await Account.findOne({userId: req.userId});
+  res.status(200).json({
+    firstName: user.firstName,
+    balance: userAccount.balance
   });
 });
 
