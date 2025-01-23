@@ -32,7 +32,7 @@ export function SendMoney () {
                   </label>
                   <input
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      type="number"
+                      type="text"
                       id="amount"
                       placeholder="Enter amount"
                       onChange={(e) => setAmount(parseInt(e.target.value))}
