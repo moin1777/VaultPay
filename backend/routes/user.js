@@ -1,6 +1,7 @@
 const { Router } = require("express");
 const zod = require("zod");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 const { JWT_SECRET } = require("../config");
 const { User, Account } = require("../db");
 const { authMiddleware } = require("../middlewares");
@@ -42,9 +43,13 @@ router.post("/signup", async (req, res) => {
     });
   }
 
+  // Hash the password before storing
+  const saltRounds = 10;
+  const hashedPassword = await bcrypt.hash(body.password, saltRounds);
+
   const user = await User.create({
     username: body.username,
-    password: body.password,
+    password: hashedPassword,
     firstName: body.firstName,
     lastName: body.lastName
   });
@@ -77,11 +82,21 @@ router.post("/signin", async (req, res) => {
     });
   }
 
-  const user = await User.findOne({username: body.username, password: body.password});
+  // Find user by username only
+  const user = await User.findOne({username: body.username});
 
   if (!user) {
     return res.status(411).json({
-      msg: "Error While logging in"
+      msg: "Invalid email or password"
+    });
+  }
+
+  // Verify password using bcrypt
+  const isPasswordValid = await bcrypt.compare(body.password, user.password);
+
+  if (!isPasswordValid) {
+    return res.status(411).json({
+      msg: "Invalid email or password"
     });
   }
 
@@ -99,7 +114,14 @@ router.put("/", authMiddleware, async (req, res) => {
     });
   }
 
-  const user = await User.findOneAndUpdate({_id: req.userId}, req.body);
+  // If password is being updated, hash it
+  const updateData = {...req.body};
+  if (updateData.password) {
+    const saltRounds = 10;
+    updateData.password = await bcrypt.hash(updateData.password, saltRounds);
+  }
+
+  const user = await User.findOneAndUpdate({_id: req.userId}, updateData);
   if (!user) {
     return res.status(411).json({
       msg: "Error while updating information"

@@ -3,7 +3,7 @@ export function Appbar ({firstName}) {
   return (
     <div className="shadow h-14 flex justify-between mb-2">
       <div className="flex flex-col justify-center h-full ml-4 text-xl font-semibold">
-        Paytm 
+        VaultPay 
       </div>
       <div className="flex">
         <div className="flex flex-col justify-center h-full mr-4 text-lg">
